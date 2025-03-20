@@ -14,11 +14,11 @@ const authController = {
             }
             const userexsit = await User.findOne({ username })
             if (userexsit) {
-                return res.status(404).json({ message: "Username is alreade taken" })
+                return res.status(404).json({ message: "Username is already taken" })
             }
             const emailexsit = await User.findOne({ email })
             if (emailexsit) {
-                return res.status(404).json({ message: "Email is alreade taken" })
+                return res.status(404).json({ message: "Email is already taken" })
             }
             const salt = await bcrypt.genSalt(10)
             const hashedPass = await bcrypt.hash(password, salt)
