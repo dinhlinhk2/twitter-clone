@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { HomePage, LoginPage, NotificationPage, RegisterPage } from "./pages/index";
+import { HomePage, LoginPage, NotificationPage, ProfilePage, RegisterPage } from "./pages/index";
 import Sidebar from "./components/common/SideBar";
 import RightPanel from "./components/common/RightPanel";
 function App() {
@@ -12,6 +12,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/notifications" element={<NotificationPage />} />
+          <Route path="/profile/:username" element={<ProfilePage />} />
         </Routes>
         <RightPanel />
       </Router>
