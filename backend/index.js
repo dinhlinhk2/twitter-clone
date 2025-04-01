@@ -8,10 +8,11 @@ const connectDB = require('./lib/db')
 dotenv.config()
 const port = process.env.PORT || 5000
 const app = express()
-app.use(express())
+app.use(express.json({ limit: '5mb' }))
 app.use(express.urlencoded({ extended: true }))
 app.use(cors({
-    credentials: true
+    credentials: true,
+    origin: 'http://localhost:3000',
 }))
 app.use(cookie())
 

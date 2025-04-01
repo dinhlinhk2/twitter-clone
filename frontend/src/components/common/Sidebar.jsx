@@ -1,20 +1,43 @@
 import XSvg from "../svgs/X";
 
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { MdHomeFilled } from "react-icons/md";
 import { IoNotifications } from "react-icons/io5";
 import { FaUser } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import { BiLogOut } from "react-icons/bi";
+import { axiosInstance } from "../../utils/axios";
+import toast from "react-hot-toast";
 
-const Sidebar = () => {
-    const data = {
-        fullName: "John Doe",
-        username: "johndoe",
-        profileImg: "/avatars/boy1.png",
+const Sidebar = ({ data }) => {
+    const queryClient = useQueryClient()
+    const { mutate } = useMutation({
+        mutationFn: async () => {
+            try {
+                const res = await axiosInstance.post('/auth/logout')
+                return res
+            } catch (error) {
+                console.log(error);
+                throw error.response.data
+            }
+        },
+        onSuccess: () => {
+            toast.success("Logout Success!")
+            queryClient.invalidateQueries({ queryKey: ['user'] })
+        },
+        onError: () => {
+            toast.error('Logout Error!')
+        }
+    })
+    const handleLogout = (e) => {
+        e.preventDefault();
+        mutate()
     };
 
+
+
     return (
-        <div className='md:flex-[2_2_0] w-20 max-w-52'>
+        <div className='md:flex-[2_2_0] w-18 max-w-52'>
             <div className='sticky top-0 right-0 h-screen flex flex-col border-r border-gray-700 w-20 md:w-full'>
                 <Link to='/' className='flex justify-center md:justify-start'>
                     <XSvg className='px-2 w-12 h-12 rounded-full fill-white hover:bg-stone-900' />
@@ -64,7 +87,7 @@ const Sidebar = () => {
                                 <p className='text-white font-bold text-sm w-20 truncate'>{data?.fullName}</p>
                                 <p className='text-slate-500 text-sm'>@{data?.username}</p>
                             </div>
-                            <BiLogOut className='w-5 h-5 cursor-pointer' />
+                            <BiLogOut className='w-5 h-5 cursor-pointer' onClick={handleLogout} />
                         </div>
                     </Link>
                 )}

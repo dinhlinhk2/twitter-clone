@@ -4,7 +4,7 @@ const generateToken = require('../lib/utils')
 
 const authController = {
     register: async (req, res) => {
-        const { username, fullName, password, email } = req.body
+        const { email, username, fullName, password } = req.body
         try {
             if (!username || !fullName || !password || !email) {
                 return res.status(400).json({ message: "All fields are required!" })
