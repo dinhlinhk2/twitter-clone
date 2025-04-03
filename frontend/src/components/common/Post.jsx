@@ -5,19 +5,43 @@ import { FaRegBookmark } from "react-icons/fa6";
 import { FaTrash } from "react-icons/fa";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { axiosInstance } from "../../utils/axios";
+import toast from "react-hot-toast";
+import LoadingSpinner from "./LoadingSpinner";
 
 const Post = ({ post }) => {
     const [comment, setComment] = useState("");
     const postOwner = post.user;
+    const { data: authUser } = useQuery({ queryKey: ['user'] })
+    const isMyPost = authUser._id === postOwner._id
     const isLiked = false;
-
-    const isMyPost = true;
-
     const formattedDate = "1h";
-
     const isCommenting = false;
+    const queryClient = useQueryClient()
+    const { mutate: delPost, isPending } = useMutation({
+        mutationFn: async (id) => {
+            try {
+                const res = await axiosInstance.delete(`/post/${id}`)
+                return res
+            } catch (error) {
+                console.log(error);
+                return error
+            }
+        },
+        onSuccess: () => {
+            toast.success('Delete Success!')
+            queryClient.invalidateQueries({ queryKey: ['posts'] })
+        },
+        retry: false
+    })
 
-    const handleDeletePost = () => { };
+
+
+    const handleDeletePost = (e) => {
+        e.preventDefault()
+        delPost(post._id)
+    };
 
     const handlePostComment = (e) => {
         e.preventDefault();
@@ -45,7 +69,10 @@ const Post = ({ post }) => {
                         </span>
                         {isMyPost && (
                             <span className='flex justify-end flex-1'>
-                                <FaTrash className='cursor-pointer hover:text-red-500' onClick={handleDeletePost} />
+                                {!isPending && <FaTrash className='cursor-pointer hover:text-red-500' onClick={handleDeletePost} />}
+                                {isPending && (
+                                    <LoadingSpinner size='sm' />
+                                )}
                             </span>
                         )}
                     </div>

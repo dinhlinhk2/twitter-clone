@@ -6,9 +6,10 @@ const Route = require('./routes/index')
 const connectDB = require('./lib/db')
 
 dotenv.config()
+
 const port = process.env.PORT || 5000
 const app = express()
-app.use(express.json({ limit: '5mb' }))
+app.use(express.json({ limit: '50mb' }))
 app.use(express.urlencoded({ extended: true }))
 app.use(cors({
     credentials: true,

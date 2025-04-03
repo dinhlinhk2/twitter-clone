@@ -31,7 +31,7 @@ const postController = {
         try {
             const post = await Post.findById(req.params.id)
             if (!post) return res.status(403).json({ message: 'Post is not found' })
-            if (post.user !== req.user.id) return res.status(404).json({ message: 'You are not authorized to delete' })
+            if (post.user.toString() !== req.user.id.toString()) return res.status(404).json({ message: 'You are not authorized to delete' })
             if (post.img) {
                 await cloudinary.uploader.destroy(post.img.split('/').pop().split('.')[0])
             }

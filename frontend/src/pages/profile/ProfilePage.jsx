@@ -1,39 +1,46 @@
-import { useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 
 import Posts from "../../components/common/Posts";
 import ProfileHeaderSkeleton from "../../components/skeleton/ProfileHeaderSkeleton";
 import EditProfileModal from "./EditProfile";
-
-import { POSTS } from "../../utils/db/dummy";
-
 import { FaArrowLeft } from "react-icons/fa6";
 import { IoCalendarOutline } from "react-icons/io5";
 import { FaLink } from "react-icons/fa";
 import { MdEdit } from "react-icons/md";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { axiosInstance } from "../../utils/axios";
 
 const ProfilePage = () => {
     const [coverImg, setCoverImg] = useState(null);
     const [profileImg, setProfileImg] = useState(null);
-    const [feedType, setFeedType] = useState("posts");
+    const param = useParams()
+    const { data: POSTS } = useQuery({ queryKey: ['posts'] })
+    const { data: user, isLoading } = useQuery({
+        queryKey: ['profile'],
+        queryFn: async () => {
+            try {
+                const res = await axiosInstance.get(`/user/profile/${param.username}`)
+                return res.data
+            } catch (error) {
+                console.log(error);
+                return null
+            }
+        },
+        retry: false
+    })
+    const queryClient = useQueryClient()
+    useEffect(() => {
+        queryClient.invalidateQueries({ queryKey: ['profile'] })
+    }, [param, queryClient])
 
+    const [feedType, setFeedType] = useState("posts");
     const coverImgRef = useRef(null);
     const profileImgRef = useRef(null);
+    const params = useParams()
 
-    const isLoading = false;
     const isMyProfile = true;
 
-    const user = {
-        _id: "1",
-        fullName: "John Doe",
-        username: "johndoe",
-        profileImg: "/avatars/boy2.png",
-        coverImg: "/cover.png",
-        bio: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-        link: "https://youtube.com/@asaprogrammer_",
-        following: ["1", "2", "3"],
-        followers: ["1", "2", "3"],
-    };
 
     const handleImgChange = (e, state) => {
         const file = e.target.files[0];
@@ -191,8 +198,7 @@ const ProfilePage = () => {
                             </div>
                         </>
                     )}
-
-                    <Posts />
+                    <Posts feedType={feedType} params={params} user={user} />
                 </div>
             </div>
         </>

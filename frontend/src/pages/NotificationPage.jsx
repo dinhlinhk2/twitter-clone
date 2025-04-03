@@ -8,12 +8,13 @@ import { axiosInstance } from "../utils/axios";
 
 const NotificationPage = () => {
 
-    const { data: notifications, isLoading } = useQuery({
+    const { data: notifications = [], isLoading } = useQuery({
         queryKey: ['notification'],
         queryFn: async () => {
             try {
-                const res = await axiosInstance.get('/v1/notification')
-                return res
+                const res = await axiosInstance.get('/notification')
+                console.log(res);
+                return res.data
             } catch (error) {
                 console.log(error);
                 throw Error(error)

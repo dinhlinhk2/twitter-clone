@@ -18,7 +18,9 @@ const LoginPage = () => {
         mutationFn: async (user) => {
             try {
                 const res = await axiosInstance.post('/auth/login', user)
+                console.log(res);
                 return res
+
             } catch (error) {
                 console.log(error);
                 throw error.response.data
