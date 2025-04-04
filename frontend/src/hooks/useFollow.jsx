@@ -11,7 +11,7 @@ const useFollow = () => {
                 return res.data
             } catch (error) {
                 console.log(error);
-                return error
+                throw error.response.data
             }
         },
         onError: (error) => {
@@ -20,7 +20,7 @@ const useFollow = () => {
         onSuccess: () => {
             Promise.all([
                 queryClient.invalidateQueries({ queryKey: ['suggestuser'] }),
-                queryClient.invalidateQueries({ queryKey: ['user'] })
+                queryClient.invalidateQueries({ queryKey: ['authuser'] })
             ])
         }
     })

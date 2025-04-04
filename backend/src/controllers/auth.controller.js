@@ -47,15 +47,15 @@ const authController = {
         const { username, password } = req.body
         try {
             if (!username || !password) {
-                return res.status(400).json("All fields are required")
+                return res.status(400).json({ message: "All fields are required" })
             }
             const userexsit = await User.findOne({ username })
             if (!userexsit) {
-                return res.status(404).json("Don't have username")
+                return res.status(404).json({ message: "Don't have username" })
             }
             const validPass = await bcrypt.compare(password, userexsit.password)
             if (!validPass) {
-                return res.status(403).json("Password wrong!")
+                return res.status(403).json({ message: "Password wrong!" })
             }
             if (userexsit || validPass) {
                 const refreshToken = generateToken(userexsit)

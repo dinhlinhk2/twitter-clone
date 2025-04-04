@@ -9,8 +9,8 @@ import toast from "react-hot-toast";
 const CreatePost = () => {
     const [text, setText] = useState("");
     const [img, setImg] = useState(null);
-    const { data: authUser } = useQuery({ queryKey: ['user'] })
-    console.log({ text, img });
+    const { data: authUser } = useQuery({ queryKey: ['auth/user'] })
+
 
     const imgRef = useRef(null);
     const queryClient = useQueryClient()
@@ -21,14 +21,17 @@ const CreatePost = () => {
                 return res
             } catch (error) {
                 console.log(error);
-                return new Error(error)
+                throw error.response.data
             }
         },
         onSuccess: () => {
             setImg(null)
             setText('')
             toast.success('Create Success!')
-            queryClient.invalidateQueries({ queryKey: ['posts'] })
+            queryClient.invalidateQueries({ queryKey: ['post/getall'] })
+        },
+        onError: (error) => {
+            toast.error(error.message)
         }
     })
 
@@ -59,7 +62,7 @@ const CreatePost = () => {
         <div className='flex p-4 items-start gap-4 border-b border-gray-700'>
             <div className='avatar'>
                 <div className='w-8 rounded-full'>
-                    <img src={authUser.profileImg || "/avatar-placeholder.png"} />
+                    <img src={authUser?.profileImg || "/avatar-placeholder.png"} />
                 </div>
             </div>
             <form className='flex flex-col gap-2 w-full' onSubmit={handleSubmit}>

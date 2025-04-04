@@ -16,7 +16,7 @@ const RightPanel = () => {
                 return res.data
             } catch (error) {
                 console.log(error);
-                return error
+                throw error.response.data
             }
         }
     })

@@ -1,10 +1,11 @@
 import { Link } from "react-router-dom";
 import LoadingSpinner from "../components/common/LoadingSpinner";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { IoSettingsOutline } from "react-icons/io5";
 import { FaUser } from "react-icons/fa";
 import { FaHeart } from "react-icons/fa6";
 import { axiosInstance } from "../utils/axios";
+import toast from "react-hot-toast";
 
 const NotificationPage = () => {
 
@@ -13,7 +14,6 @@ const NotificationPage = () => {
         queryFn: async () => {
             try {
                 const res = await axiosInstance.get('/notification')
-                console.log(res);
                 return res.data
             } catch (error) {
                 console.log(error);
@@ -23,29 +23,29 @@ const NotificationPage = () => {
         },
         retry: false
     })
-    // const notifications = [
-    //     {
-    //         _id: "1",
-    //         from: {
-    //             _id: "1",
-    //             username: "johndoe",
-    //             profileImg: "/avatars/boy2.png",
-    //         },
-    //         type: "follow",
-    //     },
-    //     {
-    //         _id: "2",
-    //         from: {
-    //             _id: "2",
-    //             username: "janedoe",
-    //             profileImg: "/avatars/girl1.png",
-    //         },
-    //         type: "like",
-    //     },
-    // ];
+    const queryClient = useQueryClient()
+    const { mutate: delNoti, isPending: isDeleting } = useMutation({
+        mutationFn: async () => {
+            try {
+                const res = await axiosInstance.delete('/notification')
+                return res.data
+            } catch (error) {
+                console.log(error);
+                return error
+            }
+        },
+        onSuccess: () => {
+            toast.success('Delete Success')
+            queryClient.invalidateQueries({ queryKey: ['notification'] })
+        },
+        onError: (error) => {
+            toast.error(error.message)
+        }
+    })
+
 
     const deleteNotifications = () => {
-        alert("All notifications deleted");
+        delNoti()
     };
 
     return (
@@ -67,7 +67,7 @@ const NotificationPage = () => {
                         </ul>
                     </div>
                 </div>
-                {isLoading && (
+                {isLoading || isDeleting && (
                     <div className='flex justify-center h-full items-center'>
                         <LoadingSpinner size='lg' />
                     </div>

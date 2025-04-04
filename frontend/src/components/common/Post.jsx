@@ -9,15 +9,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { axiosInstance } from "../../utils/axios";
 import toast from "react-hot-toast";
 import LoadingSpinner from "./LoadingSpinner";
+import { formatPostDate } from '../../utils/date/index'
 
-const Post = ({ post }) => {
+const Post = ({ post, POST_ENDPOINT }) => {
     const [comment, setComment] = useState("");
     const postOwner = post.user;
-    const { data: authUser } = useQuery({ queryKey: ['user'] })
+    const { data: authUser } = useQuery({ queryKey: ['auth/user'] })
     const isMyPost = authUser._id === postOwner._id
-    const isLiked = false;
-    const formattedDate = "1h";
-    const isCommenting = false;
+    const isLiked = post.likes.includes(authUser._id)
+    const formattedDate = formatPostDate(post.createdAt);
     const queryClient = useQueryClient()
     const { mutate: delPost, isPending } = useMutation({
         mutationFn: async (id) => {
@@ -26,14 +26,73 @@ const Post = ({ post }) => {
                 return res
             } catch (error) {
                 console.log(error);
-                return error
+                throw error.response.data
             }
         },
         onSuccess: () => {
             toast.success('Delete Success!')
-            queryClient.invalidateQueries({ queryKey: ['posts'] })
+            queryClient.invalidateQueries({ queryKey: [`post/${POST_ENDPOINT}`] })
         },
         retry: false
+    })
+    const { mutate: likePost, isPending: isLiking } = useMutation({
+        mutationFn: async (id) => {
+            try {
+                const res = await axiosInstance.post(`post/like/${id}`)
+                return res.data
+            } catch (error) {
+                console.log(error);
+                throw error.response.data
+            }
+        },
+        onSuccess: (updatedLikes) => {
+            // queryClient.invalidateQueries({ queryKey: [`post/${POST_ENDPOINT}`] })
+            // queryClient.invalidateQueries({ queryKey: [`post/following`] })
+            // queryClient.invalidateQueries({ queryKey: [`post/user/${param.username}`] })
+            // queryClient.invalidateQueries({ queryKey: [`post/getlikepost/${authUser._id}`] })
+            console.log(updatedLikes);
+            queryClient.setQueryData([`post/${POST_ENDPOINT}`], oldData => {
+                return oldData.map(p => {
+                    if (p._id === post._id) {
+                        return { ...p, likes: updatedLikes }
+                    }
+                    return p
+                })
+
+            })
+        }
+    })
+
+    const { mutate: commentPost, isPending: isCommenting } = useMutation({
+        mutationFn: async () => {
+            try {
+                const res = await axiosInstance.post(`post/comment/${post._id}`, { text: comment })
+                return res.data
+            } catch (error) {
+                console.log(error);
+                throw error.response.data
+            }
+        },
+        onSuccess: (updateCmt) => {
+            toast.success('Comment Success!')
+            setComment('')
+            console.log(updateCmt);
+
+            // queryClient.invalidateQueries({ queryKey: [`post/${POST_ENDPOINT}`] })
+            queryClient.setQueryData([`post/${POST_ENDPOINT}`], oldData => {
+                return oldData.map(p => {
+                    if (post._id === p._id) {
+                        console.log(p);
+
+                        return { ...p, comments: updateCmt }
+                    }
+                    return p
+                })
+            })
+        },
+        onError: (error) => {
+            toast.error(error.message)
+        }
     })
 
 
@@ -45,9 +104,14 @@ const Post = ({ post }) => {
 
     const handlePostComment = (e) => {
         e.preventDefault();
+        if (isCommenting) return
+        commentPost()
     };
 
-    const handleLikePost = () => { };
+    const handleLikePost = (e) => {
+        e.preventDefault()
+        likePost(post._id)
+    };
 
     return (
         <>
@@ -140,7 +204,7 @@ const Post = ({ post }) => {
                                         />
                                         <button className='btn btn-primary rounded-full btn-sm text-white px-4'>
                                             {isCommenting ? (
-                                                <span className='loading loading-spinner loading-md'></span>
+                                                <LoadingSpinner size="md" />
                                             ) : (
                                                 "Post"
                                             )}
@@ -156,13 +220,14 @@ const Post = ({ post }) => {
                                 <span className='text-sm text-slate-500 group-hover:text-green-500'>0</span>
                             </div>
                             <div className='flex gap-1 items-center group cursor-pointer' onClick={handleLikePost}>
-                                {!isLiked && (
+                                {isLiking && <LoadingSpinner size="sm" />}
+                                {!isLiked && !isLiking && (
                                     <FaRegHeart className='w-4 h-4 cursor-pointer text-slate-500 group-hover:text-pink-500' />
                                 )}
-                                {isLiked && <FaRegHeart className='w-4 h-4 cursor-pointer text-pink-500 ' />}
+                                {isLiked && !isLiking && <FaRegHeart className='w-4 h-4 cursor-pointer text-pink-500 ' />}
 
                                 <span
-                                    className={`text-sm text-slate-500 group-hover:text-pink-500 ${isLiked ? "text-pink-500" : ""
+                                    className={`text-sm  group-hover:text-pink-500 ${isLiked ? "text-pink-500" : "text-slate-500"
                                         }`}
                                 >
                                     {post.likes.length}

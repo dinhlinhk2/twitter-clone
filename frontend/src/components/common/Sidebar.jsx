@@ -23,10 +23,10 @@ const Sidebar = ({ data }) => {
         },
         onSuccess: () => {
             toast.success("Logout Success!")
-            queryClient.invalidateQueries({ queryKey: ['user'] })
+            queryClient.invalidateQueries({ queryKey: ['auth/user'] })
         },
-        onError: () => {
-            toast.error('Logout Error!')
+        onError: (error) => {
+            toast.error(error.message)
         }
     })
     const handleLogout = (e) => {

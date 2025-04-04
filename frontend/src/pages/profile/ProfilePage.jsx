@@ -1,45 +1,48 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-
-import Posts from "../../components/common/Posts";
-import ProfileHeaderSkeleton from "../../components/skeleton/ProfileHeaderSkeleton";
-import EditProfileModal from "./EditProfile";
 import { FaArrowLeft } from "react-icons/fa6";
 import { IoCalendarOutline } from "react-icons/io5";
 import { FaLink } from "react-icons/fa";
 import { MdEdit } from "react-icons/md";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+
+import Posts from "../../components/common/Posts";
+import ProfileHeaderSkeleton from "../../components/skeleton/ProfileHeaderSkeleton";
+import EditProfileModal from "./EditProfile";
+import { formatMemberSinceDate } from '../../utils/date/index'
 import { axiosInstance } from "../../utils/axios";
+import useFollow from '../../hooks/useFollow'
+import useUpdateProfile from "../../hooks/useUpdateProfile";
 
 const ProfilePage = () => {
     const [coverImg, setCoverImg] = useState(null);
     const [profileImg, setProfileImg] = useState(null);
     const param = useParams()
-    const { data: POSTS } = useQuery({ queryKey: ['posts'] })
-    const { data: user, isLoading } = useQuery({
-        queryKey: ['profile'],
+    const { data: authUser } = useQuery({ queryKey: ['auth/user'] })
+    const { data: POSTS } = useQuery({ queryKey: [`post/user/${param.username}`] })
+    const { data: user, isLoading, isRefetching, refetch } = useQuery({
+        queryKey: ['userprofile'],
         queryFn: async () => {
             try {
                 const res = await axiosInstance.get(`/user/profile/${param.username}`)
                 return res.data
             } catch (error) {
                 console.log(error);
-                return null
+                return error
             }
         },
         retry: false
     })
-    const queryClient = useQueryClient()
     useEffect(() => {
-        queryClient.invalidateQueries({ queryKey: ['profile'] })
-    }, [param, queryClient])
+        refetch()
+    }, [param, refetch])
 
     const [feedType, setFeedType] = useState("posts");
     const coverImgRef = useRef(null);
     const profileImgRef = useRef(null);
     const params = useParams()
 
-    const isMyProfile = true;
+    const isMyProfile = authUser._id === user?._id
 
 
     const handleImgChange = (e, state) => {
@@ -53,15 +56,28 @@ const ProfilePage = () => {
             reader.readAsDataURL(file);
         }
     };
+    const { follow, isPending } = useFollow()
+    const isFollow = authUser?.following.includes(user?._id)
+
+    const { update, isUpdating } = useUpdateProfile()
+    const handleUpdate = async () => {
+        const formData = {
+            coverImg,
+            profileImg
+        }
+        await update(formData)
+        setCoverImg(null)
+        setProfileImg(null)
+    }
 
     return (
         <>
             <div className='flex-[4_4_0]  border-r border-gray-700 min-h-screen '>
                 {/* HEADER */}
-                {isLoading && <ProfileHeaderSkeleton />}
-                {!isLoading && !user && <p className='text-center text-lg mt-4'>User not found</p>}
+                {isLoading && isRefetching && <ProfileHeaderSkeleton />}
+                {!isLoading && !user && !isRefetching && <p className='text-center text-lg mt-4'>User not found</p>}
                 <div className='flex flex-col'>
-                    {!isLoading && user && (
+                    {!isLoading && !isRefetching && user && (
                         <>
                             <div className='flex gap-10 px-4 py-2 items-center'>
                                 <Link to='/'>
@@ -69,7 +85,7 @@ const ProfilePage = () => {
                                 </Link>
                                 <div className='flex flex-col'>
                                     <p className='font-bold text-lg'>{user?.fullName}</p>
-                                    <span className='text-sm text-slate-500'>{POSTS?.length} posts</span>
+                                    <span className='text-sm text-slate-500'>{POSTS ? POSTS?.length : 0} posts</span>
                                 </div>
                             </div>
                             {/* COVER IMG */}
@@ -118,21 +134,23 @@ const ProfilePage = () => {
                                 </div>
                             </div>
                             <div className='flex justify-end px-4 mt-5'>
-                                {isMyProfile && <EditProfileModal />}
+                                {isMyProfile && <EditProfileModal authUser={authUser} />}
                                 {!isMyProfile && (
                                     <button
                                         className='btn btn-outline rounded-full btn-sm'
-                                        onClick={() => alert("Followed successfully")}
+                                        onClick={() => follow(user._id)}
                                     >
-                                        Follow
+                                        {isPending && 'Loading'}
+                                        {!isPending && isFollow && 'Unfollow'}
+                                        {!isPending && !isFollow && 'Follow'}
                                     </button>
                                 )}
                                 {(coverImg || profileImg) && (
                                     <button
                                         className='btn btn-primary rounded-full btn-sm text-white px-4 ml-2'
-                                        onClick={() => alert("Profile updated successfully")}
+                                        onClick={handleUpdate}
                                     >
-                                        Update
+                                        {isUpdating ? 'Updating...' : 'Update'}
                                     </button>
                                 )}
                             </div>
@@ -150,19 +168,19 @@ const ProfilePage = () => {
                                             <>
                                                 <FaLink className='w-3 h-3 text-slate-500' />
                                                 <a
-                                                    href='https://youtube.com/@asaprogrammer_'
+                                                    href={user.link}
                                                     target='_blank'
                                                     rel='noreferrer'
                                                     className='text-sm text-blue-500 hover:underline'
                                                 >
-                                                    youtube.com/@asaprogrammer_
+                                                    {user.link}
                                                 </a>
                                             </>
                                         </div>
                                     )}
                                     <div className='flex gap-2 items-center'>
                                         <IoCalendarOutline className='w-4 h-4 text-slate-500' />
-                                        <span className='text-sm text-slate-500'>Joined July 2021</span>
+                                        <span className='text-sm text-slate-500'>{formatMemberSinceDate(user.createdAt)}</span>
                                     </div>
                                 </div>
                                 <div className='flex gap-2'>

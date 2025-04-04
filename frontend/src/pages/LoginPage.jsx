@@ -20,7 +20,6 @@ const LoginPage = () => {
                 const res = await axiosInstance.post('/auth/login', user)
                 console.log(res);
                 return res
-
             } catch (error) {
                 console.log(error);
                 throw error.response.data
@@ -28,7 +27,10 @@ const LoginPage = () => {
         },
         onSuccess: () => {
             toast.success('Login Success!')
-            queryClient.invalidateQueries({ queryKey: ['user'] })
+            queryClient.invalidateQueries({ queryKey: ['auth/user'] })
+        },
+        onError: (error) => {
+            toast.error(error.message)
         }
     })
     const validData = () => {
@@ -85,7 +87,7 @@ const LoginPage = () => {
                     <button className="btn rounded-full btn-primary text-white">
                         {isPending ? 'Loading' : 'Login'}
                     </button>
-                    {isError && <p className="text-red-500">{error}</p>}
+                    {isError && <p className="text-red-500">{error.message}</p>}
                 </form>
                 <div className="flex flex-col gap-2 mt-4">
                     <p className="text-white text-lg">{"Don't"} have an account?</p>

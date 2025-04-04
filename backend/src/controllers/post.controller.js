@@ -52,7 +52,7 @@ const postController = {
             const comment = { text, user: req.user.id }
             post.comments.push(comment)
             await post.save()
-            res.status(200).json(post)
+            res.status(200).json(post.comments)
         } catch (error) {
             console.log(error);
             return res.status(500).json(error)
@@ -69,18 +69,26 @@ const postController = {
                 //unlike
                 await Post.updateOne({ _id: postId }, { $pull: { likes: userId } })
                 await User.updateOne({ _id: userId }, { $pull: { likedPosts: postId } })
-                res.status(200).json('Unlike success')
+                const updatedLikes = post.likes.filter((id) => id.toString() !== userId.toString())
+
+                res.status(200).json(updatedLikes)
             } else {
                 //like
-                await Post.updateOne({ _id: postId }, { $push: { likes: userId } })
-                await User.updateOne({ _id: userId }, { $push: { likedPosts: postId } })
+                // const postUpdate = await Post.updateOne(
+                //     { _id: postId },
+                //     { $push: { likes: userId } },
+                //     { new: true }
+                // );
+                await User.updateOne({ _id: userId }, { $push: { likedPosts: postId } }, { new: true })
+                post.likes.push(userId);
+                await post.save()
                 const newNotification = new Notification({
                     type: 'like',
                     from: userId,
                     to: post.user
                 })
                 await newNotification.save()
-                res.status(200).json('Like success')
+                res.status(200).json(post.likes)
             }
         } catch (error) {
             console.log(error);

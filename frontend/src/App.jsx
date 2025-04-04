@@ -4,24 +4,23 @@ import { HomePage, LoginPage, NotificationPage, ProfilePage, RegisterPage } from
 import Sidebar from "./components/common/Sidebar";
 import RightPanel from "./components/common/RightPanel";
 import { useQuery } from "@tanstack/react-query";
-import { axiosInstance } from "./utils/axios";
 import LoadingSpinner from "./components/common/LoadingSpinner";
+// import { axiosInstance } from "./utils/axios";
 function App() {
 
   const { data, isLoading } = useQuery({
-    queryKey: ['user'],
-    queryFn: async () => {
-      try {
-        const res = await axiosInstance.get('/auth/user')
-        return res.data
-      } catch (error) {
-        console.log(error);
-        return null
-      }
-    },
+    queryKey: ['auth/user'],
+    // queryFn: async () => {
+    //   try {
+    //     const res = await axiosInstance.get('auth/user')
+    //     return res.data
+    //   } catch (error) {
+    //     console.log(error);
+    //     return null
+    //   }
+    // },
     retry: false
   })
-  console.log(data);
 
   if (isLoading) {
     return <div className="min-h-screen flex justify-center items-center">

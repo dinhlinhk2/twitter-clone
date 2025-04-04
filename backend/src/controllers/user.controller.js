@@ -79,7 +79,7 @@ const userController = {
         }
     },
     update: async (req, res) => {
-        const { username, fullName, email, currentPass, NewPass, bio, link } = req.body
+        const { username, fullName, email, currentPassword, newPassword, bio, link } = req.body
         let { profileImg, coverImg } = req.body
         const userId = req.user.id
         try {
@@ -87,17 +87,19 @@ const userController = {
             if (!user) {
                 return res.status(404).json({ message: 'User not found' })
             }
-            if ((!NewPass && currentPass) || (NewPass && !currentPass)) {
-                return res.status(400).json({ error: 'Please provider bold currentPass and new pass' })
+            if ((!newPassword && currentPassword) || (newPassword && !currentPassword)) {
+                return res.status(400).json({ message: 'Please provider bold currentPassword and new pass' })
             }
-            if (currentPass && NewPass) {
-                const isPass = await bcrypt.compare(currentPass, user.password)
+
+            if (currentPassword && newPassword) {
+                const isPass = await bcrypt.compare(currentPassword, user.password)
                 if (!isPass) return res.status(404).json({ message: 'Current password is incorrect' })
-                if (NewPass.length < 4) return res.status(403).json({ message: 'Password must be at least 4' })
+                if (newPassword.length < 4) return res.status(403).json({ message: 'Password must be at least 4' })
 
                 const salt = await bcrypt.genSalt(10)
-                user.password = await bcrypt.hash(NewPass, salt)
+                user.password = await bcrypt.hash(newPassword, salt)
             }
+
             if (profileImg) {
                 if (user.profileImg) {
                     await cloudinary.uploader.destroy(user.profileImg.split('/').pop().split('.')[0])
