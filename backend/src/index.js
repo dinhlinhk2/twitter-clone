@@ -4,7 +4,7 @@ const cookie = require('cookie-parser')
 const dotenv = require('dotenv')
 const Route = require('./routes/index')
 const connectDB = require('./lib/db')
-
+const path = require('path')
 dotenv.config()
 
 const port = process.env.PORT || 5000
@@ -18,7 +18,16 @@ app.use(cors({
 app.use(cookie())
 
 Route(app)
+
+if (process.env.NODE_ENV === 'production') {
+    app.use(express.static(path.join(__dirname, '../../frontend/dist')))
+    app.get("*", (req, res) => {
+        res.sendFile(path.join(__dirname, "../../frontend", "dist", "index.html"));
+    });
+}
+
 app.listen(port, () => {
     console.log("Server is running!");
     connectDB()
 })
+
